@@ -1,0 +1,12 @@
+* {
+  --sl-color-accent: #0284c7;
+  --sl-color-accent-light: #38bdf8;
+}
+
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+:root {
+  --sl-color-text-accent: #0284c7;
+}

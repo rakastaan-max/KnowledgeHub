@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktiver Hardware-Studienführer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind Config for Custom Palette -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        accent: {
+                            light: '#38bdf8', // Light Blue
+                            DEFAULT: '#0284c7', // Sky Blue
+                            dark: '#0369a1',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar for better UX */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        /* Strict Chart Container Styling per requirements */
+        .strict-chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .strict-chart-container { height: 400px; }
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* HTML Diagram Styles (No SVG) */
+        .diagram-box {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .diagram-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .diagram-box.active {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+            box-shadow: 0 0 0 2px #0284c7;
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col md:flex-row min-h-screen">
+
+    <!-- Chosen Palette: Warm Neutrals (Slate) with Sky Blue Accents -->
+    <!-- Application Structure Plan: The SPA is structured as a dashboard with thematic tabs: Overview, EVA-Principle, CPU Architecture, Mainboard, and Glossary. This structure was chosen because it breaks down the dense 21-page report and study guide into logical, bite-sized learning modules. Users can navigate non-linearly. Interactive elements like the clickable EVA diagram and the RISC/CISC radar chart encourage active engagement rather than passive reading, fulfilling the goal of making the content easily explorable. -->
+    <!-- Visualization & Content Choices: 
+         1. EVA Principle -> Goal: Organize/Process Flow -> Method: HTML/CSS Flexbox diagram (NO SVG). Interaction: Clickable blocks that update a detail panel. Justification: Shows the flow of data intuitively. 
+         2. RISC vs CISC Comparison -> Goal: Compare -> Method: Radar Chart via Chart.js. Interaction: Tooltips. Justification: Effectively compares multiple attributes (complexity, speed, register usage) of two distinct architectures.
+         3. Memory Hierarchy -> Goal: Relationships/Inform -> Method: Interactive HTML/CSS list with visual progress bars. Justification: Shows speed vs capacity tradeoffs clearly without needing complex charts.
+         Confirming NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Sidebar Navigation -->
+    <nav class="bg-brand-900 text-white w-full md:w-64 flex-shrink-0 flex flex-col sticky top-0 z-10 md:h-screen shadow-xl">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold tracking-tight text-accent-light">IT-Hardware</h1>
+            <p class="text-brand-300 text-sm mt-1">Interaktiver Studienführer</p>
+        </div>
+        <div class="flex flex-row md:flex-col overflow-x-auto md:overflow-visible flex-grow">
+            <button onclick="switchTab('overview')" id="btn-overview" class="nav-btn w-full text-left px-6 py-4 text-sm font-medium border-b border-brand-800 hover:bg-brand-800 focus:outline-none bg-brand-800 text-accent-light border-l-4 border-accent-light transition-colors whitespace-nowrap">
+                &#128202; Übersicht
+            </button>
+            <button onclick="switchTab('eva')" id="btn-eva" class="nav-btn w-full text-left px-6 py-4 text-sm font-medium border-b border-brand-800 hover:bg-brand-800 focus:outline-none border-l-4 border-transparent text-brand-300 transition-colors whitespace-nowrap">
+                &#8644; EVA-Prinzip
+            </button>
+            <button onclick="switchTab('cpu')" id="btn-cpu" class="nav-btn w-full text-left px-6 py-4 text-sm font-medium border-b border-brand-800 hover:bg-brand-800 focus:outline-none border-l-4 border-transparent text-brand-300 transition-colors whitespace-nowrap">
+                &#9881; CPU & Architektur
+            </button>
+            <button onclick="switchTab('mainboard')" id="btn-mainboard" class="nav-btn w-full text-left px-6 py-4 text-sm font-medium border-b border-brand-800 hover:bg-brand-800 focus:outline-none border-l-4 border-transparent text-brand-300 transition-colors whitespace-nowrap">
+                &#128421; Mainboard & Chipsatz
+            </button>
+            <button onclick="switchTab('glossary')" id="btn-glossary" class="nav-btn w-full text-left px-6 py-4 text-sm font-medium border-b border-brand-800 hover:bg-brand-800 focus:outline-none border-l-4 border-transparent text-brand-300 transition-colors whitespace-nowrap">
+                &#128218; Glossar & Wissen
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow p-6 md:p-10 max-w-7xl mx-auto w-full">
+
+        <!-- Tab 1: Overview -->
+        <section id="overview" class="tab-content active">
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-brand-900">Grundlagen der Computerhardware</h2>
+                <p class="text-brand-500 mt-2">Ein interaktiver Begleiter zum Verständnis moderner IT-Systeme.</p>
+            </header>
+            
+            <div class="prose max-w-none text-brand-700 mb-8 bg-white p-6 rounded-xl shadow-sm border border-brand-100">
+                <p class="mb-4"><strong>Willkommen im interaktiven Studienführer.</strong> Dieser Bereich bietet einen übergeordneten Blick auf die Evolution und Einteilung von IT-Systemen. Hier erfahren Sie, wie sich die Datenverarbeitung entwickelt hat und welche Systemtypen heute dominieren. Diese Übersicht dient als Fundament, um die technischen Details in den folgenden Abschnitten einordnen zu können.</p>
+                <p>Nutzen Sie die Navigation an der Seite, um spezifische Themen wie das EVA-Prinzip, die CPU-Architektur oder den Aufbau von Mainboards zu erkunden. Die interaktiven Elemente helfen Ihnen dabei, die Zusammenhänge aktiv zu verstehen.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Evolution Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6">
+                    <h3 class="text-xl font-bold mb-4 text-brand-800 flex items-center">&#8986; Evolution der Datenverarbeitung</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="text-accent text-lg mr-2">&#10112;</span><div><strong>Manuell:</strong> Ohne Hilfsmittel (z.B. Kopfrechnen).</div></li>
+                        <li class="flex items-start"><span class="text-accent text-lg mr-2">&#10113;</span><div><strong>Mechanisch:</strong> Mit physischen Hilfsmitteln (z.B. Rechenschieber).</div></li>
+                        <li class="flex items-start"><span class="text-accent text-lg mr-2">&#10114;</span><div><strong>Elektrisch:</strong> Strombetriebene Geräte (z.B. Registrierkasse).</div></li>
+                        <li class="flex items-start bg-brand-50 p-2 rounded"><span class="text-accent text-lg mr-2 font-bold">&#10115;</span><div><strong>Elektronisch:</strong> Gesteuerte Arbeitsmittel (Computer/Elektronenrechner).</div></li>
+                    </ul>
+                </div>
+
+                <!-- Signal Type Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6">
+                    <h3 class="text-xl font-bold mb-4 text-brand-800 flex items-center">&#128200; Analog vs. Digital</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-brand-900">Analoge Signale</h4>
+                            <p class="text-sm text-brand-600">Erlauben eine unendlich große Abstufung von Wertigkeiten (natürliche Informationen).</p>
+                        </div>
+                        <div class="h-px bg-brand-200 w-full"></div>
+                        <div>
+                            <h4 class="font-semibold text-brand-900">Digitale Signale</h4>
+                            <p class="text-sm text-brand-600">Erlauben nur eindeutige, unterscheidbare (diskrete) Werte. Computer benötigen diese diskretisierten Daten zur Verarbeitung.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Types Table (Interactive via JS sorting/filtering if needed, kept simple for structure) -->
+            <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6 overflow-hidden">
+                <h3 class="text-xl font-bold mb-4 text-brand-800">Kategorien von DV-Geräten</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-brand-200">
+                        <thead class="bg-brand-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-brand-500 uppercase tracking-wider">Bezeichnung</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-brand-500 uppercase tracking-wider">Einsatzgebiet & Merkmale</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-brand-500 uppercase tracking-wider">Leistungsmessung</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-brand-100">
+                            <tr class="hover:bg-brand-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium text-brand-900">Supercomputer</td>
+                                <td class="px-6 py-4 text-sm text-brand-600">Simulation komplexer Vorgänge (z.B. Wetter). Tausende Prozessoren.</td>
+                                <td class="px-6 py-4 text-sm font-mono text-accent">Peta-FLOPS</td>
+                            </tr>
+                            <tr class="hover:bg-brand-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium text-brand-900">Mainframe</td>
+                                <td class="px-6 py-4 text-sm text-brand-600">Großrechner für Zuverlässigkeit und Massendatenverarbeitung (z.B. Banken).</td>
+                                <td class="px-6 py-4 text-sm text-brand-500">Hoher Durchsatz</td>
+                            </tr>
+                            <tr class="hover:bg-brand-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium text-brand-900">Server</td>
+                                <td class="px-6 py-4 text-sm text-brand-600">Zentraler Rechner in einem Netzwerk. Verwaltet Clients und stellt Dienste bereit.</td>
+                                <td class="px-6 py-4 text-sm text-brand-500">Netzwerklast</td>
+                            </tr>
+                            <tr class="hover:bg-brand-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium text-brand-900">Terminal</td>
+                                <td class="px-6 py-4 text-sm text-brand-600">Reine Datenendstation (Tastatur/Bildschirm) ohne eigene Rechenleistung.</td>
+                                <td class="px-6 py-4 text-sm text-brand-500">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: EVA Prinzip -->
+        <section id="eva" class="tab-content">
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-brand-900">Das EVA-Prinzip</h2>
+                <p class="text-brand-500 mt-2">Der logische Grundablauf der elektronischen Datenverarbeitung.</p>
+            </header>
+
+            <div class="prose max-w-none text-brand-700 mb-8 bg-white p-6 rounded-xl shadow-sm border border-brand-100">
+                <p>Dieser Abschnitt verdeutlicht das universelle Architekturmodell, auf dem alle Computer basieren. Klicken Sie auf die interaktiven Blöcke im Diagramm unten, um zu verstehen, welche Hardware-Komponenten für Eingabe, Verarbeitung (inklusive Speicherung) und Ausgabe zuständig sind. Dieses Modell ist essenziell, um den Datenfluss im System zu begreifen.</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6 lg:p-10">
+                <!-- Interactive HTML/CSS Diagram -->
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-10">
+                    <!-- Eingabe -->
+                    <div id="box-e" class="diagram-box w-40 h-32 bg-white border-2 border-brand-300 rounded-lg flex flex-col items-center justify-center text-center p-4" onclick="showEvaDetails('E')">
+                        <span class="text-2xl mb-2">&#9000;</span>
+                        <span class="font-bold text-brand-800">Eingabe</span>
+                    </div>
+                    
+                    <!-- Arrow -->
+                    <div class="text-3xl text-brand-400 rotate-90 md:rotate-0">&#8594;</div>
+                    
+                    <!-- Verarbeitung & Speicher -->
+                    <div class="flex flex-col gap-4">
+                        <div id="box-v" class="diagram-box w-40 h-32 bg-white border-2 border-brand-300 rounded-lg flex flex-col items-center justify-center text-center p-4" onclick="showEvaDetails('V')">
+                            <span class="text-2xl mb-2">&#9881;</span>
+                            <span class="font-bold text-brand-800">Verarbeitung</span>
+                        </div>
+                        <div class="text-xl text-brand-400 text-center">&#8597;</div>
+                        <div id="box-s" class="diagram-box w-40 h-32 bg-white border-2 border-brand-300 rounded-lg flex flex-col items-center justify-center text-center p-4" onclick="showEvaDetails('S')">
+                            <span class="text-2xl mb-2">&#128190;</span>
+                            <span class="font-bold text-brand-800">Speicherung</span>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="text-3xl text-brand-400 rotate-90 md:rotate-0">&#8594;</div>
+
+                    <!-- Ausgabe -->
+                    <div id="box-a" class="diagram-box w-40 h-32 bg-white border-2 border-brand-300 rounded-lg flex flex-col items-center justify-center text-center p-4" onclick="showEvaDetails('A')">
+                        <span class="text-2xl mb-2">&#128421;</span>
+                        <span class="font-bold text-brand-800">Ausgabe</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Detail Panel -->
+                <div id="eva-details" class="bg-brand-50 p-6 rounded-lg border border-brand-200 min-h-[150px]">
+                    <div class="text-center text-brand-500 italic mt-8">
+                        Klicken Sie auf einen Block im Diagramm oben, um Details zu den Hardware-Komponenten anzuzeigen.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: CPU & Architektur -->
+        <section id="cpu" class="tab-content">
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-brand-900">CPU & Architektur</h2>
+                <p class="text-brand-500 mt-2">Das Gehirn des Computers und seine internen Strukturen.</p>
+            </header>
+
+            <div class="prose max-w-none text-brand-700 mb-8 bg-white p-6 rounded-xl shadow-sm border border-brand-100">
+                <p>In diesem Abschnitt tauchen wir tief in die Central Processing Unit (CPU) ein. Sie lernen die internen Funktionseinheiten kennen (wie ALU, Steuerwerk und IDU) und vergleichen die zwei dominierenden Designphilosophien: RISC und CISC. Die interaktive Grafik visualisiert die konzeptionellen Unterschiede dieser beiden Architekturen.</p>
+            </div>
+
+            <!-- CPU Units Accordion / Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-brand-200">
+                        <h4 class="font-bold text-brand-900 flex items-center mb-2"><span class="text-accent mr-2">&#9881;</span> ALU (Arithmetic Logic Unit)</h4>
+                        <p class="text-sm text-brand-600">Das Rechenwerk. Führt mathematische Berechnungen und logische Verknüpfungen durch.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-brand-200">
+                        <h4 class="font-bold text-brand-900 flex items-center mb-2"><span class="text-accent mr-2">&#128373;</span> Control Unit (Steuerwerk)</h4>
+                        <p class="text-sm text-brand-600">Kontrolliert den Ablauf der Programme und koordiniert die Zusammenarbeit der CPU-Einheiten.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-brand-200">
+                        <h4 class="font-bold text-brand-900 flex items-center mb-2"><span class="text-accent mr-2">&#128270;</span> IDU (Instruction Decode Unit)</h4>
+                        <p class="text-sm text-brand-600">Übersetzt eingehende Programmbefehle anhand des internen ROMs in maschinenlesbaren Mikrocode.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-brand-200">
+                        <h4 class="font-bold text-brand-900 flex items-center mb-2"><span class="text-accent mr-2">&#128171;</span> FPU (Floating Point Unit)</h4>
+                        <p class="text-sm text-brand-600">Spezialisierter Gleitkomma-Rechner für hochkomplexe Berechnungen mit Dezimalzahlen (gemessen in FLOPS).</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-brand-200 sm:col-span-2">
+                        <h4 class="font-bold text-brand-900 flex items-center mb-2"><span class="text-accent mr-2">&#128214;</span> Cache & Register</h4>
+                        <p class="text-sm text-brand-600"><strong>Register:</strong> Extrem schnelle Zwischenspeicher direkt in der CPU für unmittelbare Rechenergebnisse. <br><strong>Cache:</strong> Schneller Puffer (oft getrennt in Code und Data Cache), um den langsameren RAM-Zugriff zu überbrücken.</p>
+                    </div>
+                </div>
+
+                <!-- RISC vs CISC Context -->
+                <div class="bg-brand-800 text-white p-6 rounded-xl shadow-md flex flex-col justify-center">
+                    <h3 class="text-xl font-bold mb-4 text-accent-light">RISC vs. CISC</h3>
+                    <p class="text-sm text-brand-200 mb-4">Das Architektur-Prinzip definiert, wie Daten und Programme verarbeitet werden.</p>
+                    <div class="mb-4">
+                        <strong class="text-white">CISC</strong> (Complex Instruction Set Computing):
+                        <p class="text-xs text-brand-300 mt-1">Umfassender Befehlssatz. Ein Befehl kann sehr mächtig sein, benötigt aber oft mehrere Taktzyklen.</p>
+                    </div>
+                    <div>
+                        <strong class="text-white">RISC</strong> (Reduced Instruction Set Computing):
+                        <p class="text-xs text-brand-300 mt-1">Kleiner, effizienter Befehlssatz. Befehle sind optimiert für einen Taktzyklus. Komplexe Aufgaben werden zerlegt, was <em>mehr Register</em> erfordert.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Container for RISC vs CISC Radar Chart -->
+            <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6">
+                <h3 class="text-xl font-bold mb-2 text-brand-800 text-center">Architektur-Vergleich (Konzeptionell)</h3>
+                <p class="text-center text-sm text-brand-500 mb-6">Vergleich der Ausprägung verschiedener Eigenschaften bei RISC und CISC</p>
+                <div class="strict-chart-container">
+                    <canvas id="architectureChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: Mainboard & Chipsatz -->
+        <section id="mainboard" class="tab-content">
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-brand-900">Mainboard & Chipsatz</h2>
+                <p class="text-brand-500 mt-2">Die Kommunikationszentrale des IT-Systems.</p>
+            </header>
+
+            <div class="prose max-w-none text-brand-700 mb-8 bg-white p-6 rounded-xl shadow-sm border border-brand-100">
+                <p>Das Mainboard (PCB) verbindet physisch und elektronisch alle Komponenten. In diesem Abschnitt erfahren Sie, wie Daten über Bussysteme übertragen werden, warum Taktgeber essenziell für die Echtzeitfähigkeit sind und wie sich der Chipsatz von einer Multi-Chip-Lösung (Northbridge/Southbridge) zu modernen hochintegrierten Controllern gewandelt hat.</p>
+            </div>
+
+            <!-- Interactive Mainboard Features -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-lg border-l-4 border-accent shadow-sm">
+                        <h4 class="font-bold text-brand-900">Leiterbahnen & Meander</h4>
+                        <p class="text-sm text-brand-600 mt-1">Elektrische Verbindungen in den Schichten (Layern) der Platine. Bei parallelen Bussen werden oft Schlangenlinien (Meander) verlegt, um <strong>Clock Skew</strong> (Laufzeitunterschiede der Signale) auszugleichen, da Signale exakt gleichzeitig ankommen müssen.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg border-l-4 border-accent shadow-sm">
+                        <h4 class="font-bold text-brand-900">Timer-IC & CMOS-Batterie</h4>
+                        <p class="text-sm text-brand-600 mt-1">Das Timer-IC agiert als Taktgeber zur Synchronisation aller Bauteile (Echtzeitfähigkeit). Die CMOS-Batterie versorgt die Echtzeituhr (RTC) und den kleinen RTC-RAM, damit Zeiteinstellungen ohne Strom nicht verloren gehen.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg border-l-4 border-accent shadow-sm">
+                        <h4 class="font-bold text-brand-900">Flash-EEPROM & UEFI</h4>
+                        <p class="text-sm text-brand-600 mt-1">Ein Speicherchip für die Firmware. Der moderne Standard <strong>UEFI</strong> löste das BIOS ab und bietet u.a. durch GPT Unterstützung für Festplatten über 2 Terabyte.</p>
+                    </div>
+                </div>
+
+                <!-- Chipset Evolution toggle -->
+                <div class="bg-white p-6 rounded-xl border border-brand-200 shadow-sm flex flex-col">
+                    <h3 class="text-xl font-bold mb-4 text-brand-800">Evolution des Chipsatzes</h3>
+                    <p class="text-sm text-brand-600 mb-4">Der Chipsatz verwaltet die Datenströme zwischen CPU und Komponenten. Wählen Sie eine Ära, um die Architektur zu sehen.</p>
+                    
+                    <div class="flex space-x-2 mb-6">
+                        <button onclick="toggleChipset('old')" id="btn-chipset-old" class="px-4 py-2 bg-accent text-white text-sm font-medium rounded-md focus:outline-none transition-colors">Frühere Architektur</button>
+                        <button onclick="toggleChipset('new')" id="btn-chipset-new" class="px-4 py-2 bg-brand-200 text-brand-700 hover:bg-brand-300 text-sm font-medium rounded-md focus:outline-none transition-colors">Moderne Architektur</button>
+                    </div>
+
+                    <div id="chipset-display" class="flex-grow bg-brand-50 rounded-lg p-4 border border-brand-200 flex flex-col items-center justify-center text-center">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Speed vs Capacity Chart -->
+            <div class="bg-white rounded-xl shadow-sm border border-brand-200 p-6">
+                <h3 class="text-xl font-bold mb-2 text-brand-800 text-center">Speicherhierarchie: Geschwindigkeit vs. Kapazität</h3>
+                <p class="text-center text-sm text-brand-500 mb-6">Je näher der Speicher an der CPU, desto schneller, aber kleiner und teurer ist er.</p>
+                <div class="strict-chart-container">
+                    <canvas id="memoryChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 5: Glossary & Test prep -->
+        <section id="glossary" class="tab-content">
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-brand-900">Glossar & Selbstkontrolle</h2>
+                <p class="text-brand-500 mt-2">Wichtige Fachbegriffe aus dem Studienführer.</p>
+            </header>
+
+            <div class="prose max-w-none text-brand-700 mb-8 bg-white p-6 rounded-xl shadow-sm border border-brand-100">
+                <p>Überprüfen Sie Ihr Wissen mit diesem interaktiven Glossar. Klicken Sie auf einen Begriff, um die zugehörige Definition anzuzeigen. Dies ist ideal zur Vorbereitung auf Tests (wie Kahoot) und hilft bei der Festigung der Fachsprache (z.B. Formfaktor, FLOPS, Clock Skew).</p>
+            </div>
+
+            <!-- Interactive Vocabulary List -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="glossary-grid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Application Logic -->
+    <script>
+        // --- State Management ---
+        const state = {
+            currentTab: 'overview',
+            currentChipset: 'old'
+        };
+
+        // --- Data Storage ---
+        const evaData = {
+            'E': {
+                title: 'Eingabeeinheit',
+                desc: 'Nimmt strukturierte Daten vom Benutzer oder anderen Systemen entgegen.',
+                examples: ['Tastatur (Kap. 1.11.1)', 'Maus (Kap. 1.11.2)', 'Scanner', 'Barcode-Leser']
+            },
+            'V': {
+                title: 'Verarbeitungseinheit',
+                desc: 'Verarbeitet die Eingabedaten nach festgelegten Regeln. Der Kern des IT-Systems.',
+                examples: ['Hauptprozessor (CPU)', 'Chipsatz', 'Grafikkern']
+            },
+            'S': {
+                title: 'Speichereinheit',
+                desc: 'Steht im ständigen Austausch mit der Verarbeitungseinheit zur Zwischen- und Langzeitspeicherung.',
+                examples: ['Arbeitsspeicher (RAM)', 'Festplatten / SSDs', 'Flash-EEPROM (BIOS/UEFI)']
+            },
+            'A': {
+                title: 'Ausgabeeinheit',
+                desc: 'Gibt die erzeugten Ergebnisse an den Benutzer oder ein anderes System weiter.',
+                examples: ['Display / Monitor', 'Drucker', 'Lautsprecher']
+            }
+        };
+
+        const glossaryData = [
+            { term: 'EVA-Prinzip', def: 'Eingabe, Verarbeitung, Ausgabe – das Grundschema jedes IT-Systems.' },
+            { term: 'Formfaktor', def: 'Normung für Mainboards (z. B. ATX), die Abmessungen und Montagepunkte festlegt.' },
+            { term: 'FLOPS', def: 'Floating Point Operations Per Second – Maß für die Gleitkomma-Leistung.' },
+            { term: 'Clock Skew', def: 'Zeitlicher Versatz von Signalen auf parallelen Leitungen bei hohen Frequenzen.' },
+            { term: 'Register', def: 'Extrem schneller flüchtiger Speicher direkt in der CPU für die aktuellste Operation.' },
+            { term: 'IDU', def: 'Instruction Decode Unit: Übersetzt Programmbefehle in Mikrocode.' },
+            { term: 'Flash-EEPROM', def: 'Speicherchip, der die Firmware (BIOS/UEFI) dauerhaft speichert, aber löschbar ist.' },
+            { term: 'PCIe', def: 'PCI Express: Serieller Hochgeschwindigkeitsbus für schnelle Punkt-zu-Punkt-Verbindungen.' }
+        ];
+
+        // --- Functional Navigation ---
+        function switchTab(tabId) {
+            // Update State
+            state.currentTab = tabId;
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Reset all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-brand-800', 'text-accent-light', 'border-accent-light');
+                el.classList.add('text-brand-300', 'border-transparent');
+            });
+
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Highlight selected button
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('text-brand-300', 'border-transparent');
+            activeBtn.classList.add('bg-brand-800', 'text-accent-light', 'border-accent-light');
+        }
+
+        // --- Interactive Elements Logic ---
+        
+        // EVA Click Handler
+        function showEvaDetails(type) {
+            // Reset block styling
+            document.querySelectorAll('.diagram-box').forEach(el => el.classList.remove('active'));
+            // Highlight active block
+            document.getElementById(`box-${type.toLowerCase()}`).classList.add('active');
+
+            const data = evaData[type];
+            const panel = document.getElementById('eva-details');
+            
+            let examplesHtml = data.examples.map(ex => `<span class="inline-block bg-brand-200 text-brand-800 text-xs px-2 py-1 rounded mr-2 mb-2">${ex}</span>`).join('');
+            
+            panel.innerHTML = `
+                <h4 class="text-lg font-bold text-accent mb-2">${data.title}</h4>
+                <p class="text-brand-700 mb-4">${data.desc}</p>
+                <div>
+                    <h5 class="text-sm font-semibold text-brand-900 mb-2">Beispiele / Komponenten:</h5>
+                    <div class="flex flex-wrap">${examplesHtml}</div>
+                </div>
+            `;
+        }
+
+        // Chipset Toggle
+        function toggleChipset(era) {
+            state.currentChipset = era;
+            
+            const btnOld = document.getElementById('btn-chipset-old');
+            const btnNew = document.getElementById('btn-chipset-new');
+            const display = document.getElementById('chipset-display');
+
+            if (era === 'old') {
+                btnOld.classList.replace('bg-brand-200', 'bg-accent');
+                btnOld.classList.replace('text-brand-700', 'text-white');
+                btnNew.classList.replace('bg-accent', 'bg-brand-200');
+                btnNew.classList.replace('text-white', 'text-brand-700');
+                
+                display.innerHTML = `
+                    <div class="flex flex-col items-center w-full max-w-sm">
+                        <div class="bg-gray-800 text-white w-full py-2 rounded mb-2 font-bold shadow">CPU</div>
+                        <div class="text-xl text-brand-400">&#8597;</div>
+                        <div class="bg-blue-600 text-white w-full py-3 rounded mb-2 font-bold shadow">Northbridge<br><span class="text-xs font-normal">Schnelle Anbindung (RAM, Grafik)</span></div>
+                        <div class="text-xl text-brand-400">&#8597;</div>
+                        <div class="bg-blue-400 text-white w-full py-3 rounded font-bold shadow">Southbridge<br><span class="text-xs font-normal">Langsame Anbindung (USB, SATA, BIOS)</span></div>
+                    </div>
+                `;
+            } else {
+                btnNew.classList.replace('bg-brand-200', 'bg-accent');
+                btnNew.classList.replace('text-brand-700', 'text-white');
+                btnOld.classList.replace('bg-accent', 'bg-brand-200');
+                btnOld.classList.replace('text-white', 'text-brand-700');
+
+                display.innerHTML = `
+                    <div class="flex flex-col items-center w-full max-w-sm">
+                        <div class="bg-gray-800 text-white w-full py-4 rounded mb-4 font-bold shadow border-2 border-accent">CPU<br><span class="text-xs font-normal text-gray-300">Integriert heute oft den Speichercontroller (ehemals Northbridge)</span></div>
+                        <div class="text-xl text-brand-400 mb-2">&#8597; DMI</div>
+                        <div class="bg-blue-500 text-white w-full py-4 rounded font-bold shadow">PCH (Platform Controller Hub)<br><span class="text-xs font-normal">Ein-Chip-Lösung (ehemals Southbridge)</span></div>
+                    </div>
+                    <p class="text-xs text-brand-500 mt-4 max-w-xs">Der direkte Zugriff der CPU auf den RAM (ohne Umweg) reduziert die Latenz erheblich.</p>
+                `;
+            }
+        }
+
+        // Glossary Builder
+        function buildGlossary() {
+            const container = document.getElementById('glossary-grid');
+            let html = '';
+            glossaryData.forEach((item, index) => {
+                html += `
+                    <div class="bg-white border border-brand-200 rounded-lg shadow-sm overflow-hidden">
+                        <button onclick="toggleDef(${index})" class="w-full text-left px-4 py-3 bg-brand-50 hover:bg-brand-100 font-semibold text-brand-900 focus:outline-none flex justify-between items-center transition-colors">
+                            <span>${item.term}</span>
+                            <span id="icon-${index}" class="text-brand-400 font-mono text-xl">+</span>
+                        </button>
+                        <div id="def-${index}" class="hidden px-4 py-3 text-sm text-brand-700 border-t border-brand-100 bg-white">
+                            ${item.def}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleDef(index) {
+            const defDiv = document.getElementById(`def-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            if (defDiv.classList.contains('hidden')) {
+                defDiv.classList.remove('hidden');
+                icon.textContent = '-';
+            } else {
+                defDiv.classList.add('hidden');
+                icon.textContent = '+';
+            }
+        }
+
+        // --- Chart.js Initializations ---
+        function initCharts() {
+            // Chart 1: RISC vs CISC (Radar Chart)
+            const ctxArch = document.getElementById('architectureChart').getContext('2d');
+            new Chart(ctxArch, {
+                type: 'radar',
+                data: {
+                    labels: ['Befehlskomplexität', 'Anzahl d. Register', 'Code-Länge (Software)', 'Hardware-Komplexität', 'Geschwindigkeit (Zyklen/Befehl)'],
+                    datasets: [
+                        {
+                            label: 'RISC',
+                            data: [2, 9, 8, 3, 9], // Scale 1-10 conceptual
+                            backgroundColor: 'rgba(2, 132, 199, 0.2)', // Accent color
+                            borderColor: 'rgba(2, 132, 199, 1)',
+                            pointBackgroundColor: 'rgba(2, 132, 199, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'CISC',
+                            data: [9, 3, 3, 9, 4],
+                            backgroundColor: 'rgba(71, 85, 105, 0.2)', // Slate
+                            borderColor: 'rgba(71, 85, 105, 1)',
+                            pointBackgroundColor: 'rgba(71, 85, 105, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: {
+                                font: { family: 'Inter', size: 11 },
+                                color: '#475569'
+                            },
+                            ticks: { display: false, min: 0, max: 10 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if(context.dataIndex === 0) label += context.raw > 5 ? 'Hoch (Mächtige Befehle)' : 'Niedrig (Einfache Befehle)';
+                                    if(context.dataIndex === 1) label += context.raw > 5 ? 'Hoch (Software zerlegt Aufgaben)' : 'Niedrig';
+                                    if(context.dataIndex === 4) label += context.raw > 5 ? 'Schnell (~1 Taktzyklus)' : 'Langsam (Mehrere Taktzyklen)';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Memory Hierarchy (Bubble/Scatter concept)
+            const ctxMem = document.getElementById('memoryChart').getContext('2d');
+            new Chart(ctxMem, {
+                type: 'bubble',
+                data: {
+                    datasets: [
+                        { label: 'Register', data: [{ x: 100, y: 1, r: 8 }], backgroundColor: '#ef4444' }, // Red (Fast, tiny)
+                        { label: 'L1/L2 Cache', data: [{ x: 80, y: 10, r: 12 }], backgroundColor: '#f97316' }, // Orange
+                        { label: 'Arbeitsspeicher (RAM)', data: [{ x: 40, y: 60, r: 25 }], backgroundColor: '#0284c7' }, // Accent Blue
+                        { label: 'SSD / HDD', data: [{ x: 10, y: 100, r: 40 }], backgroundColor: '#64748b' } // Slate (Slow, huge)
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Geschwindigkeit (Zugriffszeit) \u2192 Schnell', font: {family: 'Inter'} },
+                            ticks: { display: false },
+                            grid: { display: false },
+                            min: 0, max: 110
+                        },
+                        y: { 
+                            title: { display: true, text: 'Speicherkapazität \u2192 Groß', font: {family: 'Inter'} },
+                            ticks: { display: false },
+                            grid: { display: false },
+                            min: 0, max: 120
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return context.dataset.label; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleChipset('old'); // Init chipset view
+            buildGlossary();
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>
