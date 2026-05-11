@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
+	output: 'server',
 	adapter: vercel(),
 	integrations: [
 		starlight({
