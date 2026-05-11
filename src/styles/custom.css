@@ -1,12 +1,21 @@
 * {
-  --sl-color-accent: #0284c7;
-  --sl-color-accent-light: #38bdf8;
+	--sl-color-accent: #0284c7;
+	--sl-color-accent-light: #38bdf8;
 }
 
 body {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 :root {
-  --sl-color-text-accent: #0284c7;
+	--sl-color-text-accent: #0284c7;
+}
+
+[data-theme='dark'] {
+	--sl-color-accent: #0284c7;
+	--sl-color-accent-light: #38bdf8;
+}
+
+[data-theme='dark'] body {
+	background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }

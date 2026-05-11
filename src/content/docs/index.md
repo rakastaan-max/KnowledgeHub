@@ -1,11 +1,8 @@
 ---
 title: IT-Hardware Hub
 description: Interaktiver Studienführer für Computerhardware in der Berufsausbildung
-template: splash
 hero:
   tagline: Dein Begleiter durch die Welt der Computerhardware
-  image:
-    file: ../../assets/hero.svg
   actions:
     - text: Zum Grundlagen-Modul
       link: /01-grundlagen/
@@ -22,13 +19,13 @@ Dieser Hub bietet dir einen strukturierten Zugang zu den **Kernthemen der IT-Har
 
 ### 📚 Module
 
-| Modul | Inhalt | Für wen? |
-|-------|--------|---------|
-| **Grundlagen** | Evolution, Analog/Digital, DV-Geräte-Kategorien | Alle – Start hier! |
-| **EVA-Prinzip** | Eingabe → Verarbeitung → Ausgabe | Verstehen der Systemarchitektur |
-| **CPU & Architektur** | Innere Struktur, RISC vs. CISC, Cache | Tiefenverständnis des Prozessors |
-| **Mainboard & Chipsatz** | Kommunikationszentrale, Speicherhierarchie | Hardwareverbindungen |
-| **Glossar** | Fachbegriffe & Self-Assessment | Vorbereitung auf Tests |
+| Modul                    | Inhalt                                          | Für wen?                         |
+| ------------------------ | ----------------------------------------------- | -------------------------------- |
+| **Grundlagen**           | Evolution, Analog/Digital, DV-Geräte-Kategorien | Alle – Start hier!               |
+| **EVA-Prinzip**          | Eingabe → Verarbeitung → Ausgabe                | Verstehen der Systemarchitektur  |
+| **CPU & Architektur**    | Innere Struktur, RISC vs. CISC, Cache           | Tiefenverständnis des Prozessors |
+| **Mainboard & Chipsatz** | Kommunikationszentrale, Speicherhierarchie      | Hardwareverbindungen             |
+| **Glossar**              | Fachbegriffe & Self-Assessment                  | Vorbereitung auf Tests           |
 
 ### 🎯 Wie nutze ich diesen Hub?
 
