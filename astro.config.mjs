@@ -1,21 +1,17 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import vercel from '@astrojs/vercel/serverless';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-	output: 'hybrid',
 	adapter: vercel(),
 	integrations: [
 		starlight({
 			title: 'IT-Hardware Hub',
 			description: 'Interaktiver Studienführer für Computerhardware in der Berufsausbildung',
 			customCss: ['./src/styles/custom.css'],
-			social: {
-				github: 'https://github.com/yourusername/knowledgehub',
-			},
-			components: {
-				// Disable sitemap
-			},
+			social: [
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/yourusername/knowledgehub' },
+			],
 			sidebar: [
 				{
 					label: 'Startseite',
