@@ -1,0 +1,105 @@
+---
+export const prerender = false;
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Login – IT-Hardware Hub</title>
+		<style>
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			body {
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-family: system-ui, sans-serif;
+				background: #0f172a;
+				color: #f1f5f9;
+			}
+			.card {
+				background: #1e293b;
+				border: 1px solid #334155;
+				border-radius: 12px;
+				padding: 2.5rem;
+				width: 100%;
+				max-width: 380px;
+			}
+			h1 {
+				font-size: 1.5rem;
+				margin-bottom: 0.5rem;
+			}
+			p.subtitle {
+				color: #94a3b8;
+				font-size: 0.9rem;
+				margin-bottom: 2rem;
+			}
+			label {
+				display: block;
+				font-size: 0.85rem;
+				color: #94a3b8;
+				margin-bottom: 0.4rem;
+			}
+			input[type='password'] {
+				width: 100%;
+				padding: 0.65rem 1rem;
+				background: #0f172a;
+				border: 1px solid #334155;
+				border-radius: 8px;
+				color: #f1f5f9;
+				font-size: 1rem;
+				margin-bottom: 1rem;
+				outline: none;
+				transition: border-color 0.2s;
+			}
+			input[type='password']:focus {
+				border-color: #0284c7;
+			}
+			button {
+				width: 100%;
+				padding: 0.7rem;
+				background: #0284c7;
+				color: white;
+				border: none;
+				border-radius: 8px;
+				font-size: 1rem;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			button:hover {
+				background: #0369a1;
+			}
+			.error {
+				background: #450a0a;
+				border: 1px solid #7f1d1d;
+				color: #fca5a5;
+				padding: 0.6rem 1rem;
+				border-radius: 8px;
+				font-size: 0.85rem;
+				margin-bottom: 1rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<h1>IT-Hardware Hub</h1>
+			<p class="subtitle">Bitte gib das Passwort ein um fortzufahren.</p>
+			{error && <p class="error">Falsches Passwort. Bitte versuche es erneut.</p>}
+			<form method="POST" action="/api/auth">
+				<label for="password">Passwort</label>
+				<input type="password" id="password" name="password" autofocus autocomplete="current-password" />
+				<button type="submit">Einloggen</button>
+			</form>
+		</div>
+	</body>
+</html>

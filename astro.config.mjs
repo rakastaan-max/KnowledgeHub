@@ -9,9 +9,7 @@ export default defineConfig({
 			title: 'IT-Hardware Hub',
 			description: 'Interaktiver Studienführer für Computerhardware in der Berufsausbildung',
 			customCss: ['./src/styles/custom.css'],
-			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/yourusername/knowledgehub' },
-			],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/yourusername/knowledgehub' }],
 			sidebar: [
 				{
 					label: 'Startseite',
