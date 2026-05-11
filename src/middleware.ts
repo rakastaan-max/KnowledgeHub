@@ -1,22 +1,20 @@
 import { defineMiddleware } from 'astro:middleware';
 
 export const onRequest = defineMiddleware((context, next) => {
-	const auth = context.request.headers.get('authorization');
-
-	// Credentials aus Umgebungsvariablen (process.env für SSR Runtime)
-	const username = process.env.AUTH_USERNAME;
-	const password = process.env.AUTH_PASSWORD;
+	const username = process.env.AUTH_USERNAME?.trim();
+	const password = process.env.AUTH_PASSWORD?.trim();
 
 	if (!username || !password) {
-		// Wenn keine Credentials gesetzt, direkt weiterleiten
 		return next();
 	}
 
-	// Basic Auth prüfen
-	if (auth) {
-		const [scheme, credentials] = auth.split(' ');
-		if (scheme === 'Basic') {
-			const decoded = Buffer.from(credentials, 'base64').toString('utf-8');
+	const auth = context.request.headers.get('authorization');
+
+	if (auth?.startsWith('Basic ')) {
+		try {
+			const base64 = auth.slice(6);
+			// atob is available in Edge runtime; Buffer is not
+			const decoded = atob(base64);
 			const colonIndex = decoded.indexOf(':');
 			const user = decoded.slice(0, colonIndex);
 			const pass = decoded.slice(colonIndex + 1);
@@ -24,10 +22,11 @@ export const onRequest = defineMiddleware((context, next) => {
 			if (user === username && pass === password) {
 				return next();
 			}
+		} catch {
+			// invalid base64, fall through to 401
 		}
 	}
 
-	// Auth fehlgeschlagen oder nicht vorhanden
 	return new Response('Unauthorized', {
 		status: 401,
 		headers: {
