@@ -7,7 +7,6 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "nodejs": "20.x",
   "headers": [
     {
       "source": "/(.*)",
