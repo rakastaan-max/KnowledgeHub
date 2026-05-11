@@ -1,6 +1,11 @@
 import { defineMiddleware } from 'astro:middleware';
 
 export const onRequest = defineMiddleware((context, next) => {
+  // Nur bei On-Demand Rendering auth prüfen (nicht bei statischen vorgenerierten Seiten)
+  if (context.isPrerendered) {
+    return next();
+  }
+
   const auth = context.request.headers.get('authorization');
   
   // Credentials aus Umgebungsvariablen

@@ -1,8 +1,10 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
 	output: 'hybrid',
+	adapter: vercel(),
 	integrations: [
 		starlight({
 			title: 'IT-Hardware Hub',
@@ -10,6 +12,9 @@ export default defineConfig({
 			customCss: ['./src/styles/custom.css'],
 			social: {
 				github: 'https://github.com/yourusername/knowledgehub',
+			},
+			components: {
+				// Disable sitemap
 			},
 			sidebar: [
 				{
@@ -63,5 +68,4 @@ export default defineConfig({
 			favicon: '/favicon.svg',
 		}),
 	],
-	site: 'https://yourdomain.com',
 });

@@ -6,6 +6,7 @@ yarn.lock
 # Astro build
 .astro/
 dist/
+.vercel/
 
 # IDE & Editor
 .vscode/
