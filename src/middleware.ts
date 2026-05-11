@@ -16,8 +16,10 @@ export const onRequest = defineMiddleware((context, next) => {
 	if (auth) {
 		const [scheme, credentials] = auth.split(' ');
 		if (scheme === 'Basic') {
-			const decoded = atob(credentials);
-			const [user, pass] = decoded.split(':');
+			const decoded = Buffer.from(credentials, 'base64').toString('utf-8');
+			const colonIndex = decoded.indexOf(':');
+			const user = decoded.slice(0, colonIndex);
+			const pass = decoded.slice(colonIndex + 1);
 
 			if (user === username && pass === password) {
 				return next();
